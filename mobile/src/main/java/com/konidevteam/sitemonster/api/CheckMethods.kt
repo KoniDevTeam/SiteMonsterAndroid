@@ -1,5 +1,9 @@
 package com.konidevteam.sitemonster.api
 
+import android.os.AsyncTask
+import java.net.HttpURLConnection
+import java.net.URL
+
 /*
  * Copyright (C) 2018 Koni Dev Team, All Rights Reserved
  * https://github.com/KoniDevTeam/SiteMonsterAndroid/
@@ -20,8 +24,8 @@ package com.konidevteam.sitemonster.api
  * along with Site Monster.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-private data class HTTPResponse (val response_body: String, val response_code: Int)
+private data class HTTPResponse (val responseBody: String, val responseCode: Int)
 
-private data class HTTPRequest (val url: String, val request_body: String, val http_method: String,
-                                val use_proxy: Boolean = false, val proxy_ip: String = "", val proxy_port: Int = 0,
-                                val proxy_login: String, val proxy_password: String)
+private data class HTTPRequest (val url: String, val requestBody: String, val httpMethod: String,
+                                val useProxy: Boolean = false, val http, val proxyIp: String = "", val proxyPort: Int = 0,
+                                val proxyLogin: String = "", val proxyPassword: String = "")
