@@ -2,7 +2,9 @@ package com.konidevteam.sitemonster.api
 
 import android.os.AsyncTask
 import java.io.OutputStreamWriter
+import java.lang.Exception
 import java.net.*
+import java.util.concurrent.TimeUnit
 
 
 /*
@@ -32,7 +34,7 @@ private data class HTTPRequest (val url: String, val requestBody: String, val ht
                                 val proxyLogin: String = "", val proxyPassword: String = "")
 
 private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>() {
-    fun startConnectionWithProxy(req: HTTPRequest, url: URL): HttpURLConnection {
+    private fun startConnectionWithProxy(req: HTTPRequest, url: URL): HttpURLConnection {
         if (req.useProxy && req.proxyLogin != "") {
             val authenticator = object : Authenticator() {
                 override fun getPasswordAuthentication(): PasswordAuthentication {
@@ -48,7 +50,7 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
             url.openConnection() as HttpURLConnection
     }
 
-    fun addReqBody(req: HTTPRequest, connection: HttpURLConnection) {
+    private fun addReqBody(req: HTTPRequest, connection: HttpURLConnection) {
         if (req.requestBody != "") {
             connection.doOutput = true
             val os = connection.outputStream
@@ -60,7 +62,7 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
         }
     }
 
-    fun sendRequest(connection: HttpURLConnection): HTTPResponse {
+    private fun sendRequest(connection: HttpURLConnection): HTTPResponse {
         var response: HTTPResponse
         try {
             val data = connection.inputStream.bufferedReader().readText()
@@ -85,5 +87,23 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
         addReqBody(req, connection)
 
         return sendRequest(connection)
+    }
+
+    /**
+     * Checks website response and accessibility
+     * @param req - http request template for website
+     * @param responseBody - expected response body
+     * @param responseCodes - array of expected response codes
+     * @param timeout - request timeout in milliseconds
+     */
+    fun checkWebsite(req: HTTPRequest, responseBody: String, responseCodes: Array<Int>, timeout: Long): Boolean {
+        try {
+            val HttpReqTask = MakeHttpRequestTask()
+            HttpReqTask.execute(req)
+            val res = HttpReqTask.get(timeout, TimeUnit.MILLISECONDS)
+            return res.responseCode in responseCodes && responseBody.equals(res.responseBody)
+        } catch (e: Exception) {
+            return false
+        }
     }
 }
