@@ -1,9 +1,9 @@
 package com.konidevteam.sitemonster.api
 
 import android.os.AsyncTask
-import java.io.BufferedInputStream
 import java.io.OutputStreamWriter
 import java.net.*
+
 
 /*
  * Copyright (C) 2018 Koni Dev Team, All Rights Reserved
@@ -32,13 +32,7 @@ private data class HTTPRequest (val url: String, val requestBody: String, val ht
                                 val proxyLogin: String = "", val proxyPassword: String = "")
 
 private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>() {
-    override fun doInBackground(vararg params: HTTPRequest?): HTTPResponse {
-        val req = params[0]
-
-        var url = URL(req!!.url)
-
-        // Setup proxy
-
+    fun startConnectionWithProxy(req: HTTPRequest, url: URL): HttpURLConnection {
         if (req.useProxy && req.proxyLogin != "") {
             val authenticator = object : Authenticator() {
                 override fun getPasswordAuthentication(): PasswordAuthentication {
@@ -48,19 +42,14 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
             Authenticator.setDefault(authenticator)
         }
 
-        val connection = if (req.useProxy)
+        return if (req.useProxy)
             url.openConnection(Proxy(Proxy.Type.HTTP, InetSocketAddress(req.proxyIp, req.proxyPort))) as HttpURLConnection
         else
             url.openConnection() as HttpURLConnection
+    }
 
-        // Other settings
-
-        connection.requestMethod = req.httpMethod
-
-        for ((name, value) in req.httpHeaders)
-            connection.setRequestProperty(name, value)
-
-        if (req.requestBody != "") { // Set request body if it is not empty
+    fun addReqBody(req: HTTPRequest, connection: HttpURLConnection) {
+        if (req.requestBody != "") {
             connection.doOutput = true
             val os = connection.outputStream
             val osw = OutputStreamWriter(os, "UTF-8")
@@ -69,8 +58,9 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
             osw.close()
             os.close()
         }
+    }
 
-        // Sending request
+    fun sendRequest(connection: HttpURLConnection): HTTPResponse {
         var response: HTTPResponse
         try {
             val data = connection.inputStream.bufferedReader().readText()
@@ -80,5 +70,20 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
         }
 
         return response
+    }
+
+    override fun doInBackground(vararg params: HTTPRequest?): HTTPResponse {
+        val req = params[0]
+        val url = URL(req!!.url)
+        val connection = startConnectionWithProxy(req, url)
+
+        connection.requestMethod = req.httpMethod
+
+        for ((name, value) in req.httpHeaders)
+            connection.setRequestProperty(name, value)
+
+        addReqBody(req, connection)
+
+        return sendRequest(connection)
     }
 }
