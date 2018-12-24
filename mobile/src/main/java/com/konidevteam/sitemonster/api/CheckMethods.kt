@@ -1,8 +1,9 @@
 package com.konidevteam.sitemonster.api
 
 import android.os.AsyncTask
-import java.net.HttpURLConnection
-import java.net.URL
+import java.io.BufferedInputStream
+import java.io.OutputStreamWriter
+import java.net.*
 
 /*
  * Copyright (C) 2018 Koni Dev Team, All Rights Reserved
@@ -27,5 +28,57 @@ import java.net.URL
 private data class HTTPResponse (val responseBody: String, val responseCode: Int)
 
 private data class HTTPRequest (val url: String, val requestBody: String, val httpMethod: String,
-                                val useProxy: Boolean = false, val http, val proxyIp: String = "", val proxyPort: Int = 0,
+                                val useProxy: Boolean = false, val httpHeaders: Map<String, String>, val proxyIp: String = "", val proxyPort: Int = 0,
                                 val proxyLogin: String = "", val proxyPassword: String = "")
+
+private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>() {
+    override fun doInBackground(vararg params: HTTPRequest?): HTTPResponse {
+        val req = params[0]
+
+        var url = URL(req!!.url)
+
+        // Setup proxy
+
+        if (req.useProxy && req.proxyLogin != "") {
+            val authenticator = object : Authenticator() {
+                override fun getPasswordAuthentication(): PasswordAuthentication {
+                    return PasswordAuthentication(req.proxyLogin, req.proxyPassword.toCharArray())
+                }
+            }
+            Authenticator.setDefault(authenticator)
+        }
+
+        val connection = if (req.useProxy)
+            url.openConnection(Proxy(Proxy.Type.HTTP, InetSocketAddress(req.proxyIp, req.proxyPort))) as HttpURLConnection
+        else
+            url.openConnection() as HttpURLConnection
+
+        // Other settings
+
+        connection.requestMethod = req.httpMethod
+
+        for ((name, value) in req.httpHeaders)
+            connection.setRequestProperty(name, value)
+
+        if (req.requestBody != "") { // Set request body if it is not empty
+            connection.doOutput = true
+            val os = connection.outputStream
+            val osw = OutputStreamWriter(os, "UTF-8")
+            osw.write(req.requestBody)
+            osw.flush()
+            osw.close()
+            os.close()
+        }
+
+        // Sending request
+        var response: HTTPResponse
+        try {
+            val data = connection.inputStream.bufferedReader().readText()
+            response = HTTPResponse(data, connection.responseCode)
+        } finally {
+            connection.disconnect()
+        }
+
+        return response
+    }
+}
