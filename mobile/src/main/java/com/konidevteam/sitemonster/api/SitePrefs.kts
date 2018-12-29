@@ -17,7 +17,12 @@ fun createWebsite(context: Context, website: Website) {
  * Returns website by name from device memory
  */
 fun getWebsiteByName(context: Context, name: String): Website {
-
+    val websites = getAllWebsites(context)
+    websites.forEach {
+        if (it.name == name)
+            return it
+    }
+    throw NoSuchFieldException("Can't find website with name $name")
 }
 
 /**
@@ -31,13 +36,6 @@ fun renameWebsite(context: Context, name: String, newName: String) {
  * Replaces settings of website and saves it to device memory
  */
 fun updateWebsiteSettings(context: Context, name: String, newSettings: Website) {
-
-}
-
-/**
- * Finds and returns website in array of websites by it's name
- */
-fun getWebsiteByName(context: Context, name: String, websites: Array<Website>): Website {
 
 }
 
