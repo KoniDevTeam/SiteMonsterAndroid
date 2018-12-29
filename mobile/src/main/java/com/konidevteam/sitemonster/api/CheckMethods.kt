@@ -27,9 +27,9 @@ import java.util.concurrent.TimeUnit
  * along with Site Monster.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-public data class HTTPResponse (val responseBody: String, val responseCode: Int)
+data class HTTPResponse (val responseBody: String, val responseCode: Int)
 
-public data class HTTPRequest (val url: String, val requestBody: String, val httpMethod: String,
+data class HTTPRequest (val url: String, val requestBody: String, val httpMethod: String,
                                 val useProxy: Boolean = false, val httpHeaders: Map<String, String>, val proxyIp: String = "", val proxyPort: Int = 0,
                                 val proxyLogin: String = "", val proxyPassword: String = "")
 
@@ -63,7 +63,7 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
     }
 
     private fun sendRequest(connection: HttpURLConnection): HTTPResponse {
-        var response: HTTPResponse
+        val response: HTTPResponse
         try {
             val data = connection.inputStream.bufferedReader().readText()
             response = HTTPResponse(data, connection.responseCode)
@@ -88,22 +88,22 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
 
         return sendRequest(connection)
     }
+}
 
-    /**
-     * Checks website response and accessibility
-     * @param req - http request template for website
-     * @param responseBody - expected response body
-     * @param responseCodes - array of expected response codes
-     * @param timeout - request timeout in milliseconds
-     */
-    fun checkWebsite(req: HTTPRequest, responseBody: String, responseCodes: Array<Int>, timeout: Long): Boolean {
-        return try {
-            val HttpReqTask = MakeHttpRequestTask()
-            HttpReqTask.execute(req)
-            val res = HttpReqTask.get(timeout, TimeUnit.MILLISECONDS)
-            res.responseCode in responseCodes && responseBody.equals(res.responseBody)
-        } catch (e: Exception) {
-            false
-        }
+/**
+ * Checks website response and accessibility
+ * @param req - http request template for website
+ * @param responseBody - expected response body
+ * @param responseCodes - array of expected response codes
+ * @param timeout - request timeout in milliseconds
+ */
+fun checkWebsite(req: HTTPRequest, responseBody: String, responseCodes: Array<Int>, timeout: Long): Boolean {
+    return try {
+        val httpReqTask = MakeHttpRequestTask()
+        httpReqTask.execute(req)
+        val res = httpReqTask.get(timeout, TimeUnit.MILLISECONDS)
+        res.responseCode in responseCodes && responseBody == res.responseBody
+    } catch (e: Exception) {
+        false
     }
 }
