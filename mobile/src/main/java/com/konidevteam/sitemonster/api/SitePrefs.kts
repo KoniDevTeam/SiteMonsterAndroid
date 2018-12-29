@@ -4,13 +4,18 @@ import com.konidevteam.sitemonster.R
 import com.konidevteam.sitemonster.api.HTTPRequest
 import java.util.prefs.InvalidPreferencesFormatException
 
-data class Website (val name: String, val request: HTTPRequest)
+data class Website (var name: String, var request: HTTPRequest)
 
 /**
  * Creates new website anf puts it on device memory
  */
 fun createWebsite(context: Context, website: Website) {
-
+    val websites = getAllWebsites(context)
+    websites.forEach {
+        if (it.name == website.name)
+            throw Exception("Name is already taken")
+    }
+    pushAllWebsites(context, websites.plus(website))
 }
 
 /**
@@ -29,14 +34,31 @@ fun getWebsiteByName(context: Context, name: String): Website {
  * Changes name of website and saves it to device memory
  */
 fun renameWebsite(context: Context, name: String, newName: String) {
-
+    val websites = getAllWebsites(context)
+    websites.forEach {
+        if (it.name == name) {
+            it.name = newName
+        }
+    }
+    pushAllWebsites(context, websites)
 }
 
 /**
  * Replaces settings of website and saves it to device memory
  */
 fun updateWebsiteSettings(context: Context, name: String, newSettings: Website) {
+    val websites = getAllWebsites(context)
 
+    run loop@{
+        websites.forEachIndexed { idx, value ->
+            if (value.name == name) {
+                websites[idx] = newSettings
+                return@loop
+            }
+        }
+    }
+
+    pushAllWebsites(context, websites)
 }
 
 /**
