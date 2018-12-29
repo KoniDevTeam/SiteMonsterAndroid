@@ -27,9 +27,9 @@ import java.util.concurrent.TimeUnit
  * along with Site Monster.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-private data class HTTPResponse (val responseBody: String, val responseCode: Int)
+public data class HTTPResponse (val responseBody: String, val responseCode: Int)
 
-private data class HTTPRequest (val url: String, val requestBody: String, val httpMethod: String,
+public data class HTTPRequest (val url: String, val requestBody: String, val httpMethod: String,
                                 val useProxy: Boolean = false, val httpHeaders: Map<String, String>, val proxyIp: String = "", val proxyPort: Int = 0,
                                 val proxyLogin: String = "", val proxyPassword: String = "")
 
@@ -97,13 +97,13 @@ private class MakeHttpRequestTask : AsyncTask<HTTPRequest, Void, HTTPResponse>()
      * @param timeout - request timeout in milliseconds
      */
     fun checkWebsite(req: HTTPRequest, responseBody: String, responseCodes: Array<Int>, timeout: Long): Boolean {
-        try {
+        return try {
             val HttpReqTask = MakeHttpRequestTask()
             HttpReqTask.execute(req)
             val res = HttpReqTask.get(timeout, TimeUnit.MILLISECONDS)
-            return res.responseCode in responseCodes && responseBody.equals(res.responseBody)
+            res.responseCode in responseCodes && responseBody.equals(res.responseBody)
         } catch (e: Exception) {
-            return false
+            false
         }
     }
 }
